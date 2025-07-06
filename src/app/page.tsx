@@ -1,3 +1,5 @@
+// src/app/page.tsx
+
 "use client";
 import { BodyContainer } from "@/components/BodyContainer";
 import { CardContainer } from "@/components/CardContainer";
@@ -6,7 +8,7 @@ import { Header } from "@/components/Header";
 import { Table } from "@/components/Table";
 import { useTransaction } from "@/hooks/transactions";
 import { ITransaction, ITotal } from "@/types/transaction";
-import { useMemo, useState } from "react";
+import { useMemo, useState } from "react"; // useMemo NÃO será mais usado para totais
 import { ToastContainer } from "react-toastify";
 import { Modal } from "@/components/Modal";
 
@@ -20,6 +22,12 @@ export default function Home() {
   const transactions = paginatedData?.data || [];
   const totalCount = paginatedData?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  // NOVO: Extrair os totais globais do paginatedData
+  const globalTotalIncome = paginatedData?.totalIncome || 0;
+  const globalTotalOutcome = paginatedData?.totalOutcome || 0;
+  const globalTotal = paginatedData?.total || 0;
+
 
   const createTransactionMutation = useTransaction.Create();
   
@@ -71,25 +79,15 @@ export default function Home() {
     }
   };
 
-  const totalTransactions: ITotal = useMemo(() => {
-    if (!transactions || transactions.length === 0) {
-      return { totalIncome: 0, totalOutcome: 0, total: 0 };
-    }
+  // REMOVIDO: O useMemo para totalTransactions NÃO É MAIS NECESSÁRIO
+  // pois os totais virão diretamente do backend.
+  // Se CardContainer espera ITotal, podemos construir um objeto ITotal com os totais globais.
+  const globalTotalsForCards: ITotal = {
+      totalIncome: globalTotalIncome,
+      totalOutcome: globalTotalOutcome,
+      total: globalTotal
+  };
 
-    return transactions.reduce(
-      (acc: ITotal, { type, price }: ITransaction) => {
-        if (type === 'INCOME') {
-          acc.totalIncome += price;
-          acc.total += price;
-        } else if (type === 'OUTCOME') {
-          acc.totalOutcome += price;
-          acc.total -= price;
-        }
-        return acc;
-      },
-      { totalIncome: 0, totalOutcome: 0, total: 0 }
-    );
-  }, [transactions]);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [transactionToDeleteId, setTransactionToDeleteId] = useState<string | null>(null);
@@ -122,14 +120,15 @@ export default function Home() {
 
   if (isLoading) return <div>Carregando transações...</div>;
   if (isError) return <div>Erro ao carregar transações.</div>;
-  if (!transactions || transactions.length === 0) return <div>Nenhuma transação encontrada.</div>;
+  if (totalCount === 0 && !isLoading) return <div>Nenhuma transação encontrada.</div>;
 
   return (
     <div>
       <ToastContainer />
       <Header openModal={openModal} />
       <BodyContainer>
-        <CardContainer totals={totalTransactions} />
+        {/* Passa os totais globais para o CardContainer */}
+        <CardContainer totals={globalTotalsForCards} /> 
         
         <Table
           data={transactions}

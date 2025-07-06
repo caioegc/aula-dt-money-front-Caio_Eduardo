@@ -1,3 +1,5 @@
+// src/types/transaction.ts
+
 export interface ITransaction {
     id?: string;
     title: string;
@@ -13,7 +15,11 @@ export type ITotal = {
     total: number;
 }
 
+// Interface ATUALIZADA com totais globais
 export interface PaginatedTransactionsResponse {
-    data: ITransaction[]; // O array de transações da página atual
-    totalCount: number; // O número total de transações no banco de dados (para calcular o total de páginas)
+    data: ITransaction[];
+    totalCount: number;
+    totalIncome: number; 
+    totalOutcome: number; 
+    total: number;       
 }
